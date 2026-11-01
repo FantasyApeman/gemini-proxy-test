@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel Gemini Proxy Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 p-6 max-w-xl mx-auto space-y-6 font-mono">
+    <div class="border-b border-gray-800 pb-4">
+        <h1 class="text-xl font-bold text-cyan-400">⚡ Vercel Gemini Proxy 測試</h1>
+        <p class="text-xs text-gray-400 mt-1">前端零 Key • 由 Vercel Serverless Function 安全轉發</p>
+    </div>
+
+    <div class="space-y-3">
+        <label class="block text-xs font-bold text-gray-300">輸入測試問題：</label>
+        <textarea id="promptInput" rows="3" class="w-full bg-gray-900 border border-gray-800 p-3 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-500" placeholder="例如：推薦 3 名今日 Fantasy 特賣球員..."></textarea>
+
+        <button onclick="sendRequest()" id="sendBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-gray-950 font-black py-2.5 rounded-xl text-sm transition">
+            發送請求 (經由 /api/gemini)
+        </button>
+    </div>
+
+    <div class="space-y-2">
+        <label class="block text-xs font-bold text-gray-400">GEMINI 回應結果：</label>
+        <div id="output" class="bg-gray-900 border border-gray-800 p-4 rounded-xl text-xs whitespace-pre-line text-gray-200 min-h-[120px]">
+            等待發送...
+        </div>
+    </div>
+
+    <script>
+        async function sendRequest() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            const output = document.getElementById('output');
+            const btn = document.getElementById('sendBtn');
+
+            if (!prompt) {
+                alert('請先輸入問題！');
+                return;
+            }
+
+            output.innerText = '⏳ 正在經由 Vercel Proxy 呼叫 Gemini...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    output.innerText = data.candidates[0].content.parts[0].text;
+                } else {
+                    output.innerText = '❌ 發生錯誤:\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                output.innerText = '❌ 請求失敗: ' + err.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
